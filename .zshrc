@@ -126,7 +126,19 @@ alias ll="eza --icons --color=always -lah"
 alias lt="eza --icons --tree --level=2"
 alias cat="bat --style=auto"
 alias fd="fdfind"
+alias lg="lazygit"
+alias ld="lazydocker"
 alias ..="cd .."
 alias ...="cd ../.."
+
+# nvm
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+
+# pyenv
+export PYENV_ROOT="$HOME/.pyenv"
+[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init - zsh)"
 
 eval "$(oh-my-posh init zsh --config ~/.cache/oh-my-posh/themes/catppuccin_mocha.omp.json)"
