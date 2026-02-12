@@ -57,7 +57,9 @@ else
   echo "[4/8] Oh My Posh already installed, skipping."
 fi
 echo "Downloading Oh My Posh themes..."
-oh-my-posh get themes
+mkdir -p ~/.cache/oh-my-posh/themes
+curl -sL "https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/themes.zip" -o /tmp/omp-themes.zip
+unzip -oq /tmp/omp-themes.zip -d ~/.cache/oh-my-posh/themes
 
 # Install nvm + Node LTS
 echo "[5/8] Installing nvm + Node.js..."
