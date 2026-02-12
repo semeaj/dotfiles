@@ -2,8 +2,11 @@
 
 echo "=== Dotfiles Installer ==="
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ARCH=$(dpkg --print-architecture)
+
 # Install apt packages
-echo "[1/8] Installing apt packages..."
+echo "[1/11] Installing apt packages..."
 sudo apt update
 sudo apt install -y \
   zsh git curl wget \
@@ -15,10 +18,16 @@ sudo apt install -y \
   libssl-dev libffi-dev libbz2-dev libreadline-dev libsqlite3-dev \
   zlib1g-dev libncurses-dev libxml2-dev libxmlsec1-dev liblzma-dev
 
+mkdir -p ~/.local/bin
+
+# Create bat symlink (Debian/Ubuntu installs as batcat)
+if command -v batcat &>/dev/null && ! command -v bat &>/dev/null; then
+  ln -sf "$(which batcat)" ~/.local/bin/bat
+fi
+
 # Install eza (not in all distro repos)
 if ! command -v eza &> /dev/null; then
-  echo "Installing eza from GitHub..."
-  ARCH=$(dpkg --print-architecture)
+  echo "[2/11] Installing eza from GitHub..."
   if [ "$ARCH" = "amd64" ]; then
     EZA_ARCH="x86_64-unknown-linux-gnu"
   elif [ "$ARCH" = "arm64" ]; then
@@ -26,22 +35,23 @@ if ! command -v eza &> /dev/null; then
   else
     EZA_ARCH="x86_64-unknown-linux-gnu"
   fi
-  EZA_VERSION=$(curl -s "https://api.github.com/repos/eza-community/eza/releases/latest" | jq -r '.tag_name')
   curl -Lo /tmp/eza.tar.gz "https://github.com/eza-community/eza/releases/latest/download/eza_${EZA_ARCH}.tar.gz"
   tar xf /tmp/eza.tar.gz -C /tmp && install -m 755 /tmp/eza ~/.local/bin/eza
+else
+  echo "[2/11] eza already installed, skipping."
 fi
 
 # Install Oh My Zsh
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
-  echo "[2/8] Installing Oh My Zsh..."
+  echo "[3/11] Installing Oh My Zsh..."
   RUNZSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 else
-  echo "[2/8] Oh My Zsh already installed, skipping."
+  echo "[3/11] Oh My Zsh already installed, skipping."
 fi
 
 # Install custom zsh plugins
 ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
-echo "[3/8] Installing zsh plugins..."
+echo "[4/11] Installing zsh plugins..."
 [ ! -d "$ZSH_CUSTOM/plugins/zsh-autosuggestions" ] && \
   git clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
 [ ! -d "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" ] && \
@@ -51,10 +61,10 @@ echo "[3/8] Installing zsh plugins..."
 
 # Install Oh My Posh
 if ! command -v oh-my-posh &> /dev/null; then
-  echo "[4/8] Installing Oh My Posh..."
+  echo "[5/11] Installing Oh My Posh..."
   curl -s https://ohmyposh.dev/install.sh | bash -s
 else
-  echo "[4/8] Oh My Posh already installed, skipping."
+  echo "[5/11] Oh My Posh already installed, skipping."
 fi
 echo "Downloading Oh My Posh themes..."
 mkdir -p ~/.cache/oh-my-posh/themes
@@ -62,7 +72,7 @@ curl -sL "https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/
 unzip -oq /tmp/omp-themes.zip -d ~/.cache/oh-my-posh/themes
 
 # Install nvm + Node LTS
-echo "[5/8] Installing nvm + Node.js..."
+echo "[6/11] Installing nvm + Node.js..."
 if [ ! -d "$HOME/.nvm" ]; then
   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
 fi
@@ -71,7 +81,7 @@ export NVM_DIR="$HOME/.nvm"
 nvm install --lts
 
 # Install pyenv + latest Python
-echo "[6/8] Installing pyenv + Python..."
+echo "[7/11] Installing pyenv + Python..."
 if [ ! -d "$HOME/.pyenv" ]; then
   curl https://pyenv.run | bash
 fi
@@ -82,19 +92,18 @@ pyenv install -s 3.13
 pyenv global 3.13
 
 # Install CLI tools to ~/.local/bin
-echo "[7/8] Installing CLI tools..."
-mkdir -p ~/.local/bin
+echo "[8/11] Installing CLI tools..."
 
-# Detect architecture
-ARCH=$(dpkg --print-architecture)
 if [ "$ARCH" = "arm64" ]; then
   LG_ARCH="Linux_arm64"
   LD_ARCH="Linux_arm64"
   YQ_ARCH="yq_linux_arm64"
+  FF_ARCH="linux-aarch64"
 else
   LG_ARCH="Linux_x86_64"
   LD_ARCH="Linux_x86_64"
   YQ_ARCH="yq_linux_amd64"
+  FF_ARCH="linux-amd64"
 fi
 
 if ! command -v lazygit &> /dev/null; then
@@ -114,8 +123,22 @@ if ! command -v yq &> /dev/null; then
   install -m 755 /tmp/yq ~/.local/bin/yq
 fi
 
+# Install fastfetch
+if ! command -v fastfetch &> /dev/null; then
+  echo "Installing fastfetch..."
+  curl -Lo /tmp/fastfetch.deb "https://github.com/fastfetch-cli/fastfetch/releases/latest/download/fastfetch-${FF_ARCH}.deb"
+  if sudo -n true 2>/dev/null; then
+    sudo dpkg -i /tmp/fastfetch.deb || sudo apt install -f -y
+  else
+    # Extract from .deb without sudo
+    cd /tmp && ar x fastfetch.deb && tar xf data.tar.gz ./usr/bin/fastfetch
+    install -m 755 /tmp/usr/bin/fastfetch ~/.local/bin/fastfetch
+    cd -
+  fi
+fi
+
 # Install latest Neovim + LazyVim
-echo "[8/9] Installing Neovim + LazyVim..."
+echo "[9/11] Installing Neovim + LazyVim..."
 if [ "$ARCH" = "arm64" ]; then
   NVIM_ARCH="nvim-linux-arm64"
 else
@@ -130,9 +153,35 @@ if [ ! -d "$HOME/.config/nvim" ]; then
   rm -rf ~/.config/nvim/.git
 fi
 
+# Install bat Catppuccin Mocha theme
+echo "[10/11] Installing bat Catppuccin theme..."
+mkdir -p "$(batcat --config-dir 2>/dev/null || echo ~/.config/bat)/themes"
+BAT_THEMES_DIR="$(batcat --config-dir 2>/dev/null || echo ~/.config/bat)/themes"
+curl -Lo "$BAT_THEMES_DIR/Catppuccin Mocha.tmTheme" \
+  "https://raw.githubusercontent.com/catppuccin/bat/main/themes/Catppuccin%20Mocha.tmTheme"
+batcat cache --build 2>/dev/null || bat cache --build 2>/dev/null
+
+# Install TPM and tmux plugins
+echo "[11/11] Installing TPM + tmux plugins + symlinking configs..."
+if [ ! -d "$HOME/.tmux/plugins/tpm" ]; then
+  git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+fi
+if [ ! -d "$HOME/.tmux/plugins/tmux" ]; then
+  git clone https://github.com/catppuccin/tmux ~/.tmux/plugins/tmux
+fi
+if [ ! -d "$HOME/.tmux/plugins/tmux-sensible" ]; then
+  git clone https://github.com/tmux-plugins/tmux-sensible ~/.tmux/plugins/tmux-sensible
+fi
+
+# Symlink configs
+mkdir -p ~/.config/bat ~/.config/lazygit ~/.config/fastfetch
+
+ln -sf "$SCRIPT_DIR/config/bat/config" ~/.config/bat/config
+ln -sf "$SCRIPT_DIR/config/lazygit/config.yml" ~/.config/lazygit/config.yml
+ln -sf "$SCRIPT_DIR/config/fastfetch/config.jsonc" ~/.config/fastfetch/config.jsonc
+ln -sf "$SCRIPT_DIR/.tmux.conf" ~/.tmux.conf
+
 # Symlink .zshrc
-echo "[9/9] Linking .zshrc..."
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 if [ -f "$HOME/.zshrc" ] && [ ! -L "$HOME/.zshrc" ]; then
   mv "$HOME/.zshrc" "$HOME/.zshrc.backup"
   echo "  Backed up existing .zshrc to .zshrc.backup"
@@ -147,4 +196,7 @@ fi
 
 echo ""
 echo "=== Done! ==="
-echo "Restart your terminal or run: exec zsh"
+echo "Post-install steps:"
+echo "  1. Restart your terminal or run: exec zsh"
+echo "  2. Open tmux and press Ctrl+a then I to install tmux plugins"
+echo "  3. Paste Catppuccin Mocha theme into Windows Terminal settings"

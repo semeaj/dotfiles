@@ -137,6 +137,19 @@ alias ccy="claude --dangerously-skip-permissions"
 alias ..="cd .."
 alias ...="cd ../.."
 
+# fzf Catppuccin Mocha
+export FZF_DEFAULT_OPTS=" \
+--color=bg+:#313244,bg:#1e1e2e,spinner:#f5e0dc,hl:#f38ba8 \
+--color=fg:#cdd6f4,header:#f38ba8,info:#cba6f7,pointer:#f5e0dc \
+--color=marker:#b4befe,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8 \
+--color=selected-bg:#45475a \
+--color=border:#6c7086,label:#cdd6f4"
+
+# fzf previews
+export FZF_CTRL_T_OPTS="--preview 'bat --color=always --style=numbers --line-range=:200 {} 2>/dev/null || eza --icons --tree --level=1 --color=always {}' --preview-window=right:50%"
+export FZF_ALT_C_OPTS="--preview 'eza --icons --tree --level=2 --color=always {}' --preview-window=right:50%"
+export FZF_CTRL_R_OPTS="--preview 'echo {}' --preview-window=down:3:wrap"
+
 # nvm
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
@@ -148,3 +161,8 @@ export PYENV_ROOT="$HOME/.pyenv"
 eval "$(pyenv init - zsh)"
 
 eval "$(oh-my-posh init zsh --config ~/.cache/oh-my-posh/themes/catppuccin_mocha.omp.json)"
+
+# Fastfetch on interactive shell launch
+if [[ $- == *i* ]] && command -v fastfetch &>/dev/null; then
+  fastfetch
+fi
