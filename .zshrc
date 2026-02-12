@@ -163,9 +163,15 @@ eval "$(pyenv init - zsh)"
 # Suppress terminal queries inside tmux (prevents escape code leaks)
 if [[ -n "$TMUX" ]]; then
   export TERM_PROGRAM=tmux
+  export COLORTERM=truecolor
 fi
 
 eval "$(oh-my-posh init zsh --config ~/.cache/oh-my-posh/themes/catppuccin_mocha.omp.json)"
+
+# Drain any pending terminal query responses (DA1/DA2 leaks in tmux)
+if [[ -n "$TMUX" ]]; then
+  while read -t 0.05 -k 1 -s 2>/dev/null; do :; done
+fi
 
 # Fastfetch on interactive shell launch
 if [[ $- == *i* ]] && command -v fastfetch &>/dev/null; then
