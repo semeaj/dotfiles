@@ -8,13 +8,29 @@ echo "[1/8] Installing apt packages..."
 sudo apt update
 sudo apt install -y \
   zsh git curl wget \
-  fzf bat eza fd-find ripgrep \
+  fzf bat fd-find ripgrep \
   htop tmux neovim jq \
   build-essential gcc make cmake \
   unzip zip tar \
   python3 python3-pip \
   libssl-dev libffi-dev libbz2-dev libreadline-dev libsqlite3-dev \
   zlib1g-dev libncurses-dev libxml2-dev libxmlsec1-dev liblzma-dev
+
+# Install eza (not in all distro repos)
+if ! command -v eza &> /dev/null; then
+  echo "Installing eza from GitHub..."
+  ARCH=$(dpkg --print-architecture)
+  if [ "$ARCH" = "amd64" ]; then
+    EZA_ARCH="x86_64-unknown-linux-gnu"
+  elif [ "$ARCH" = "arm64" ]; then
+    EZA_ARCH="aarch64-unknown-linux-gnu"
+  else
+    EZA_ARCH="x86_64-unknown-linux-gnu"
+  fi
+  EZA_VERSION=$(curl -s "https://api.github.com/repos/eza-community/eza/releases/latest" | jq -r '.tag_name')
+  curl -Lo /tmp/eza.tar.gz "https://github.com/eza-community/eza/releases/latest/download/eza_${EZA_ARCH}.tar.gz"
+  tar xf /tmp/eza.tar.gz -C /tmp && install -m 755 /tmp/eza ~/.local/bin/eza
+fi
 
 # Install Oh My Zsh
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
@@ -68,20 +84,32 @@ pyenv global 3.13
 echo "[7/8] Installing CLI tools..."
 mkdir -p ~/.local/bin
 
+# Detect architecture
+ARCH=$(dpkg --print-architecture)
+if [ "$ARCH" = "arm64" ]; then
+  LG_ARCH="Linux_arm64"
+  LD_ARCH="Linux_arm64"
+  YQ_ARCH="yq_linux_arm64"
+else
+  LG_ARCH="Linux_x86_64"
+  LD_ARCH="Linux_x86_64"
+  YQ_ARCH="yq_linux_amd64"
+fi
+
 if ! command -v lazygit &> /dev/null; then
   LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | jq -r '.tag_name' | sed 's/v//')
-  curl -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
+  curl -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_${LG_ARCH}.tar.gz"
   tar xf /tmp/lazygit.tar.gz -C /tmp lazygit && install -m 755 /tmp/lazygit ~/.local/bin/lazygit
 fi
 
 if ! command -v lazydocker &> /dev/null; then
   LAZYDOCKER_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazydocker/releases/latest" | jq -r '.tag_name' | sed 's/v//')
-  curl -Lo /tmp/lazydocker.tar.gz "https://github.com/jesseduffield/lazydocker/releases/latest/download/lazydocker_${LAZYDOCKER_VERSION}_Linux_x86_64.tar.gz"
+  curl -Lo /tmp/lazydocker.tar.gz "https://github.com/jesseduffield/lazydocker/releases/latest/download/lazydocker_${LAZYDOCKER_VERSION}_${LD_ARCH}.tar.gz"
   tar xf /tmp/lazydocker.tar.gz -C /tmp lazydocker && install -m 755 /tmp/lazydocker ~/.local/bin/lazydocker
 fi
 
 if ! command -v yq &> /dev/null; then
-  curl -Lo /tmp/yq "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64"
+  curl -Lo /tmp/yq "https://github.com/mikefarah/yq/releases/latest/download/${YQ_ARCH}"
   install -m 755 /tmp/yq ~/.local/bin/yq
 fi
 
