@@ -168,9 +168,11 @@ eval "$(pyenv init - zsh)"
 
 eval "$(oh-my-posh init zsh --config ~/.cache/oh-my-posh/themes/catppuccin_mocha.omp.json)"
 
-# Drain any pending terminal query responses (DA1/DA2 leaks in tmux)
+# Drain pending terminal query responses and clear artifacts in tmux
 if [[ -n "$TMUX" ]]; then
-  while read -t 0.05 -k 1 -s 2>/dev/null; do :; done
+  sleep 0.05
+  while read -t 0.01 -k 1 -s 2>/dev/null; do :; done
+  clear
 fi
 
 # Fastfetch on interactive shell launch
