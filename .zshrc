@@ -133,6 +133,7 @@ alias vim="nvim"
 alias vi="nvim"
 alias lg="lazygit"
 alias ld="lazydocker"
+alias ccy="claude --dangerously-skip-permissions"
 alias ..="cd .."
 alias ...="cd ../.."
 
