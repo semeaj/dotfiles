@@ -168,12 +168,16 @@ eval "$(pyenv init - zsh)"
 
 eval "$(oh-my-posh init zsh --config ~/.cache/oh-my-posh/themes/catppuccin_mocha.omp.json)"
 
-# Drain pending terminal query responses in tmux
-if [[ -n "$TMUX" ]]; then
-  while read -t 0.05 -k 1 -s 2>/dev/null; do :; done
+# In tmux: drain leaked escape responses, clear, and re-show MOTD
+if [[ -n "$TMUX" ]] && [[ $- == *i* ]]; then
+  sleep 0.05
+  while read -t 0.01 -k 1 -s 2>/dev/null; do :; done
+  clear
+  # Re-display MOTD if available (PAM already ran it but clear wiped it)
+  [[ -x /etc/update-motd.d/10-system-info ]] && /etc/update-motd.d/10-system-info
 fi
 
-# Fastfetch on interactive shell launch
-if [[ $- == *i* ]] && command -v fastfetch &>/dev/null; then
+# Fastfetch on interactive shell launch (non-tmux, or systems without MOTD)
+if [[ $- == *i* ]] && [[ -z "$TMUX" ]] && command -v fastfetch &>/dev/null; then
   fastfetch
 fi
