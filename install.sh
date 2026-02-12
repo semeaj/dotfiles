@@ -8,7 +8,7 @@ sudo apt update
 sudo apt install -y \
   zsh git curl wget \
   fzf bat fd-find ripgrep \
-  htop tmux neovim jq \
+  htop tmux jq \
   build-essential gcc make cmake \
   unzip zip tar \
   python3 python3-pip \
@@ -112,8 +112,24 @@ if ! command -v yq &> /dev/null; then
   install -m 755 /tmp/yq ~/.local/bin/yq
 fi
 
+# Install latest Neovim + LazyVim
+echo "[8/9] Installing Neovim + LazyVim..."
+if [ "$ARCH" = "arm64" ]; then
+  NVIM_ARCH="nvim-linux-arm64"
+else
+  NVIM_ARCH="nvim-linux-x86_64"
+fi
+curl -Lo /tmp/nvim.tar.gz "https://github.com/neovim/neovim/releases/latest/download/${NVIM_ARCH}.tar.gz"
+tar xf /tmp/nvim.tar.gz -C /tmp
+cp -r /tmp/${NVIM_ARCH}/* ~/.local/
+
+if [ ! -d "$HOME/.config/nvim" ]; then
+  git clone https://github.com/LazyVim/starter ~/.config/nvim
+  rm -rf ~/.config/nvim/.git
+fi
+
 # Symlink .zshrc
-echo "[8/8] Linking .zshrc..."
+echo "[9/9] Linking .zshrc..."
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 if [ -f "$HOME/.zshrc" ] && [ ! -L "$HOME/.zshrc" ]; then
   mv "$HOME/.zshrc" "$HOME/.zshrc.backup"
