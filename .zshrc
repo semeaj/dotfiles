@@ -1,3 +1,9 @@
+# Suppress terminal queries inside tmux (must be before anything else)
+if [[ -n "$TMUX" ]]; then
+  export TERM_PROGRAM=tmux
+  export COLORTERM=truecolor
+fi
+
 # If you come from bash you might have to change your $PATH.
 export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
 
@@ -159,12 +165,6 @@ export NVM_DIR="$HOME/.nvm"
 export PYENV_ROOT="$HOME/.pyenv"
 [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init - zsh)"
-
-# Suppress terminal queries inside tmux (prevents escape code leaks)
-if [[ -n "$TMUX" ]]; then
-  export TERM_PROGRAM=tmux
-  export COLORTERM=truecolor
-fi
 
 eval "$(oh-my-posh init zsh --config ~/.cache/oh-my-posh/themes/catppuccin_mocha.omp.json)"
 
