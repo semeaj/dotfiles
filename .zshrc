@@ -160,6 +160,11 @@ export PYENV_ROOT="$HOME/.pyenv"
 [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init - zsh)"
 
+# Suppress terminal queries inside tmux (prevents escape code leaks)
+if [[ -n "$TMUX" ]]; then
+  export TERM_PROGRAM=tmux
+fi
+
 eval "$(oh-my-posh init zsh --config ~/.cache/oh-my-posh/themes/catppuccin_mocha.omp.json)"
 
 # Fastfetch on interactive shell launch
